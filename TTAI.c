@@ -1,56 +1,41 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <string.h>
-
-// board indexing board[2][1] ---> row 2, col 1
-
-// 3 by 3 board
-
-struct Move {
-    int i;
-    int j;
-};
-
-typedef struct Move Move;
-
-const int BOARD_SIZE = 3;
-void printBoard (char ** board);
-char ** createEmptyBoard();
-char ** createCustomBoard();
-void doMove(char ** board, int i, int j, char player);
-void undoMove(char ** board, int i, int j);
-char isWinner(char ** board, char player);
-Move * nextMove(char ** board, char player);
-int max(char ** board, Move * optimalMove, char player, int depth);
-int min(char ** board, Move * optimalMove, char player, int depth);
-char getOpponentMark(char player);
-char ** createBoardFromInput(char * inputBoard);
-void freeBoard(char ** board);
-void AIvsAI();
-
-
+#include "TTAI.h"
 
 int main(int argc, char ** argv) {
+    //AIvsAI();
+    //return 0;
+    /* check number of arguments passed */
     if(argc != 4) {
         printf("Invalid number of arguments passed!\n");
+        printInputMsg();
         return EXIT_FAILURE;
     }
-    //printf("board: %s, player: %s, playerChar: %c\n", argv[1], argv[2], argv[2][0]);
+    
+    /* initialize and check board */
     char ** board = createBoardFromInput(argv[1]);
     if(board == NULL) {
         printf("Invalid board data inputted!\n");
+        printInputMsg();
         return EXIT_FAILURE;
     }
-    char player = argv[2][0];
+
+    /* check player */
+    char player = tolower(argv[2][0]);
+    if(player != 'o' && player != 'x') {
+        printf("Invalid player inputted!\n");
+        printInputMsg();
+        return EXIT_FAILURE;
+    }
+
     int checkWinner = strcmp(argv[3], "-w");
     int findMove = strcmp(argv[3], "-m");
-    printf("findMove: %i, checkWinner:%i\n", findMove, checkWinner);
+    
     if (checkWinner == 0) {
+        /* perform winner check */
         char win = isWinner(board, player);
+        printf("stuff: %c\n", win);
         printf("isWinner: %i\n", win == player);
     } else if (findMove == 0) {
-        //printBoard(board);
+        /* perform next move calculation */
         Move * mv = nextMove(board, player);
         if(mv != NULL) {
             doMove(board, mv->i, mv->j, player);
@@ -58,28 +43,35 @@ int main(int argc, char ** argv) {
             printf("(%i,%i), isWinner: %i\n", mv->i, mv->j, win == player);
             free(mv);
         } else 
-            printf("no good move\n");
+            printf("No good move found!\n");
     } else {
-        printf("error: wrong flag passed\n");
+        printf("Invalid flag passed!\n");
+        printInputMsg();
     }
-    //printBoard(board);
+
     freeBoard(board);
-    //AIvsAI();
     return EXIT_SUCCESS;
 }
+
+/* 
+ * Prints message about expected input. 
+ */
+void printInputMsg() {
+    printf("Format expected: ./TTAI <board> <player> <flag>\n");
+    printf("-<board>: board in row by row format, enter '-' for blank spot. Ex: xox---o--\n");
+    printf("-<player>: either 'o' or 'x'\n");
+    printf("-<flag>: '-w' to determine if player winner, '-m' for next move with determination of winner\n");
+}
+
+/*
+ * Minimax plays against itself
+ */
 void AIvsAI() {
-    char ** board = createEmptyBoard();//createBoardFromInput("xxx---ooo");
+    char ** board = createEmptyBoard();
     printBoard(board);
-    int x = 2;
-    int y = 2;
-    //doMove(board,x,y,'x');
-//    doMove(board,2,1,'o');
-    //printf("Winner: %c\n", isWinner(board,2,1));
-    
     int q = 0;
     for(q = 0; q < 5; q++) {
         printf("player x move\n");
-//        printBoard(board);
         char player = 'x';
         Move * mv = nextMove(board, player);
         if(mv != NULL) {
@@ -93,7 +85,6 @@ void AIvsAI() {
 
         printf("===================\nplayer o move\n");
 
-  //      printBoard(board);
         char player1 = 'o';
         Move * mv1 = nextMove(board, player1);
         if(mv1 != NULL) {
@@ -106,9 +97,14 @@ void AIvsAI() {
         }
     }
     freeBoard(board);
-
 }
+
+/*
+ * Parses string representation of a board and returns
+ * a 2d array representation.
+ */
 char ** createBoardFromInput(char * inputBoard) {
+    /* wrong input */
    if(strlen(inputBoard) != BOARD_SIZE * BOARD_SIZE) {
        return NULL;
    }
@@ -130,6 +126,9 @@ char ** createBoardFromInput(char * inputBoard) {
    return outputBoard;
 }
 
+/*
+ * Free allocated board.
+ */
 void freeBoard(char ** board) {
     int i;
     for(i = 0; i < BOARD_SIZE; i++) {
@@ -138,11 +137,19 @@ void freeBoard(char ** board) {
     free(board);
 }
 
+/*
+ * Maximization move, in other words the computer move. The AI wants to
+ * maximize in order to win.
+ */
 int max(char ** board, Move * optimalMove, char player, int depth) {
     int max = INT_MIN;
     int won = 0;
     int i,j;
+
+    /* the higher the depth, the less desirable the move is */
     depth++;
+
+    /* loop through all avaialble moves */
     for(i = 0; i < BOARD_SIZE; i++) {
         for(j = 0; j < BOARD_SIZE; j++) {
             int value = 0;
@@ -151,45 +158,47 @@ int max(char ** board, Move * optimalMove, char player, int depth) {
                 doMove(board, i, j, player);
                 char isWin = isWinner(board, player);
                 if(isWin == player) {
+                    /* the player won with this move */
                     value = 10 - depth;
                     won = 1;
-
-                    //printf("it is a '%c' player win\n", player);
                 } else if(isWin == '-') {
-                    //draw
-                    //printf("2its a draw\n");
-                    //printBoard(board);
+                    /* draw, less desirable than a win */
                     value = 0;
                 } else {
+                    /* the game is not over yet so continue to opponent player move simulation */
                     value = min(board, optimalMove, getOpponentMark(player), depth);
                 }
                 undoMove(board, i, j);
-              
+                
+                /* we have found a more desirable move */
                 if(value > max) {
-                    //printf("changing coords from (%i,%i) to (%i,%i) at depth: %i, max:%i, value:%i \n", optimalMove->i,optimalMove->j,i,j,depth,max,value);
                     max = value;
+
+                    /* update best move only on first level since we want to pick
+                     * the maximum optimal move out of all possible
+                     */
                     if(depth==1) {
                         optimalMove -> i = i;
                         optimalMove -> j = j;
                     }
                 }
-                if(depth == 1) {
-                    //printf("coor: (%i,%i) max: %i\n", i,j,max);
-                }
-                //printf("move: (%i,%i), value:%i, max: %i, player:%c, depth: %i\n",i,j,value,max,player,depth);
-                //if(won == 1) break;
-
             }
         }
-        //if(won == 1) break;
     }
     return max;
 }
+
+/*
+ * Minimizes move, in other words the opponent move. The AI needs to simulate
+ * the opponent move in order to see if the previous move is the most optimal
+ * compared to other moves.
+ */
 int min(char ** board, Move * optimalMove, char player, int depth) {
     int min = INT_MAX;
     int won = 0;
     int i,j;
     depth++;
+    /* iterate through all available moves */
     for(i = 0; i < BOARD_SIZE; i++) {
         for(j = 0; j < BOARD_SIZE; j++) {
             int value = 0;
@@ -198,31 +207,29 @@ int min(char ** board, Move * optimalMove, char player, int depth) {
                 doMove(board, i, j, player);
                 char isWin = isWinner(board, player);
                 if(isWin == player) {
-                    //value = -10 - depth;
+                    /* this move generates a win */
                     value = depth - 10;
                     won = 1;
-                    //printf("it is a '%c' player win\n", player);
                 } else if(isWin == '-') {
-                    //draw 
-                    //printf("1its a draw\n");
-                    //printBoard(board);
+                    /* draw */
                     value = 0;
                 } else {
+                    /* no winner has been found, continue the simulation */
                     value = max(board, optimalMove, getOpponentMark(player), depth);
                 }
                 undoMove(board, i, j);
                 if(value < min) {
                     min = value;
                 }
-                //printf("move: (%i,%i), value:%i, min: %i, player:%c, depth: %i\n",i,j,value,min,player,depth);
-
-                //if(won == 1) break;
             }
         }
-        //if(won == 1) break;
     }
     return min;
 }
+
+/*
+ * Figures out the mark of the opponent.
+ */
 char getOpponentMark(char player) {
     if(player == 'x')
         return 'o';
@@ -230,20 +237,30 @@ char getOpponentMark(char player) {
         return 'x';
     return 'E';
 }
+
+/*
+ * Given a board and player mark, returns a struct with the next best move.
+ */
 Move * nextMove(char ** board, char player) {
     Move * optimalMove = (Move *)malloc(sizeof(Move *));
     optimalMove -> i = -1;
     optimalMove -> j = -1;
 
     int initialDepth = 0;
+    /* runs minimax algorithm to find the next best move */
     max(board, optimalMove, player, initialDepth);
+
+    /* no optimal move has been found */
     if(optimalMove -> i == -1 || optimalMove -> j == -1) {
         free(optimalMove);
         return NULL;
     }
     return optimalMove;
-
 }
+
+/*
+ * Prints board, mainly used for debugging.
+ */
 void printBoard (char ** board) {
     int i,j;
     for(i = 0; i < BOARD_SIZE; i++) {
@@ -252,8 +269,12 @@ void printBoard (char ** board) {
         }
         printf("\n");
     }
-//    printf("%c\n", board[2][1]);
 }
+
+/*
+ * Returns a board based on the hard coded positions. Was used 
+ * for debugging during development.
+ */
 char ** createCustomBoard(){
     char ** board = (char **)malloc(sizeof(char *) * BOARD_SIZE);
      int i;
@@ -261,34 +282,48 @@ char ** createCustomBoard(){
         board[i] = (char *)malloc(sizeof(char) * BOARD_SIZE);
     }
 
+    /* defined custom hypothetical board here */
     board[0][0] = 'o';  board[0][1] = 'x';  board[0][2] = 'o';
     board[1][0] = 'x';  board[1][1] = 'x';  board[1][2] = 'o';
     board[2][0] = '-';  board[2][1] = '-';  board[2][2] = '-';
- 
     return board;
 }
+
+/*
+ * Creates an empty board. Used when facing an AI vs AI.
+ */
 char ** createEmptyBoard() {
     char ** board = (char **)malloc(sizeof(char *) * BOARD_SIZE);
     int i,j;
     for(i = 0; i < BOARD_SIZE; i++) {
         board[i] = (char *)malloc(sizeof(char) * BOARD_SIZE);
     }
-    int k = 0;
     for(i = 0; i < BOARD_SIZE; i++) {
         for(j = 0; j < BOARD_SIZE; j++) {
             board[i][j] = '-';
-            k++;
         }
     }
     return board;
 }
 
+/*
+ * Performs a specified move on the board.
+ */
 void doMove(char ** board, int i, int j, char player) {
     board[i][j] = player;
 }
+
+/*
+ * Reverses the specified move.
+ */
 void undoMove(char ** board, int i, int j) {
     board[i][j] = '-';
 }
+
+/*
+ * Determines if winner.
+ */
+
 // returns the character at x,y (so x or o) if the 
 // character at that position has won the game with the move
 //
