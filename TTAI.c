@@ -1,8 +1,7 @@
 #include "TTAI.h"
 
 int main(int argc, char ** argv) {
-    //AIvsAI();
-    //return 0;
+
     /* check number of arguments passed */
     if(argc != 4) {
         printf("Invalid number of arguments passed!\n");
@@ -33,14 +32,34 @@ int main(int argc, char ** argv) {
         /* perform winner check */
         char win = isWinner(board, player);
         printf("stuff: %c\n", win);
-        printf("isWinner: %i\n", win == player);
+        
+        /* -1 is loss */
+        int winValue = -1;
+        /* it is a win */
+        if(win == player)
+            winValue = 1;
+        /* is is a tie */
+        else if(win == '-')
+            winValue = 0;
+
+        printf("isWinner: %i\n", winValue);
     } else if (findMove == 0) {
         /* perform next move calculation */
         Move * mv = nextMove(board, player);
         if(mv != NULL) {
             doMove(board, mv->i, mv->j, player);
             char win = isWinner(board, player);
-            printf("(%i,%i), isWinner: %i\n", mv->i, mv->j, win == player);
+
+            /* -1 is loss */
+            int winValue = -1;
+            /* it is a win */
+            if(win == player)
+                winValue = 1;
+            /* is is a tie */
+            else if(win == '-')
+                winValue = 0;
+
+            printf("(%i,%i), isWinner: %i\n", mv->i, mv->j, winValue);
             free(mv);
         } else 
             printf("No good move found!\n");
@@ -73,7 +92,9 @@ void AIvsAI() {
     for(q = 0; q < 5; q++) {
         printf("player x move\n");
         char player = 'x';
+        printf("before move\n");
         Move * mv = nextMove(board, player);
+        printf("got move\n");
         if(mv != NULL) {
             printf("suggestion: (%i, %i)\n", mv->i, mv->j);
             doMove(board, mv->i, mv->j, player);
@@ -321,67 +342,86 @@ void undoMove(char ** board, int i, int j) {
 }
 
 /*
- * Determines if winner.
+ * Determines if winner. If the given player is a winner, the 
+ * method returns the player mark. If player is looser then returns the
+ * opponent mark. If draw returns '-'. If no winner returns ' '
  */
-
-// returns the character at x,y (so x or o) if the 
-// character at that position has won the game with the move
-//
-// returns '-' if it's a draw
-// return ' ' if no winner
 char isWinner(char ** board, char player) {
-    //printBoard(board);
+    char oppPlayer = getOpponentMark(player);
     int col = 0, row = 0, ldiag = 0, rdiag = 0;
+    int col_op = 0, row_op = 0, ldiag_op = 0, rdiag_op = 0;
     int i;
-    // check diagonals
+    /* check diagonals */
     for(i = 0; i < BOARD_SIZE; i++) {
-        //printf("ldiag pos (%i, %i): %c\n", i,i, board[i][i]);
+
         if(board[i][i] == player)
             ldiag++;
+        else if(board[i][i] == oppPlayer)
+            ldiag_op++;
 
-        //printf("rdiag pos (%i, %i): %c\n", i,BOARD_SIZE-i-1, board[i][BOARD_SIZE-i-1]);
         if(board[i][BOARD_SIZE - i - 1] == player)
             rdiag++;
+        else if(board[i][BOARD_SIZE - i - 1] == oppPlayer)
+            rdiag_op++;
     }
+    
     if(ldiag == BOARD_SIZE || rdiag == BOARD_SIZE) {
+        /* given player won */
         return player;
+    } else if(ldiag_op == BOARD_SIZE || rdiag_op == BOARD_SIZE) {
+        /* given player lost */
+        return oppPlayer;
     }
     int allOccupied = 0;
     int j,k;
-    // check rows/cols
+    /* check rows/cols */
     for(j = 0; j < BOARD_SIZE; j++) {
         col = 0;
         row = 0;
+        col_op = 0;
+        row_op = 0;
         for(k = 0; k < BOARD_SIZE; k++) {
             if(board[j][k] != '-')
                 allOccupied++;
-            //printf("col pos (%i, %i): %c\n", j,k, board[j][k]);
+            
             if(board[j][k] == player) {
                 col++;
                 if (col == BOARD_SIZE) {
-                    // we found a winner
+                    /* given player won */
                     return player;
                 }
+            } else if(board[j][k] == oppPlayer) {
+                col_op++;
+                if (col_op == BOARD_SIZE) {
+                    /* other player won */
+                    return oppPlayer;
+                }
             }
-            //printf("row pos (%i, %i): %c\n", k,j, board[k][j]);
+    
             if(board[k][j] == player) {
                 row++;
                 if(row == BOARD_SIZE) {
-                    // we have a winner
+                    /* given player won */
                     return player;
+                }
+            } else if(board[k][j] == oppPlayer) {
+                row_op++;
+                if(row_op == BOARD_SIZE) {
+                    /* other player won */
+                    return oppPlayer;
                 }
             }
         }
-
-        //printf("done!\n");
     }
-    //printf("col: %i, row:%i, rdiag:%i, ldiag:%i, player: %c\n", col,row,rdiag,ldiag,player);
+    
     if(col == BOARD_SIZE || row == BOARD_SIZE) 
         return player;
-    // it's a draw
+    else if(col_op == BOARD_SIZE || row_op == BOARD_SIZE) 
+        return oppPlayer;
+
+    /* it's a draw */
     if(allOccupied == BOARD_SIZE * BOARD_SIZE)
         return '-';
-    
-    // no winner yet
+    /* no winner yet */
     return ' ';
 }
