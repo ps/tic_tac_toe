@@ -23,7 +23,7 @@ char ** createEmptyBoard();
 char ** createCustomBoard();
 void doMove(char ** board, int i, int j, char player);
 void undoMove(char ** board, int i, int j);
-char isWinner(char ** board, char player);
+char getWinner(char ** board);
 Move * nextMove(char ** board, char player);
 int max(char ** board, Move * optimalMove, char player, int depth);
 int min(char ** board, Move * optimalMove, char player, int depth);

@@ -1,28 +1,32 @@
 #include "TTAI.h"
 
 int main(int argc, char ** argv) {
-
+    int showHelp = 0;
+    if(argc > 1 && strcmp(argv[1], "-h") == 0) {
+        printInputMsg();
+        return EXIT_SUCCESS;
+    }
     /* check number of arguments passed */
     if(argc != 4) {
-        printf("Invalid number of arguments passed!\n");
-        printInputMsg();
-        return EXIT_FAILURE;
+        printf("{'error':'Invalid number of arguments passed!'}\n");
+        /* returning success so that python script doesn't crash */
+        return EXIT_SUCCESS;
     }
     
     /* initialize and check board */
     char ** board = createBoardFromInput(argv[1]);
     if(board == NULL) {
-        printf("Invalid board data inputted!\n");
-        printInputMsg();
-        return EXIT_FAILURE;
+        printf("{'error':'Invalid board data inputted!'}\n");
+        /* same reason as above */
+        return EXIT_SUCCESS;
     }
 
     /* check player */
     char player = tolower(argv[2][0]);
     if(player != 'o' && player != 'x') {
-        printf("Invalid player inputted!\n");
-        printInputMsg();
-        return EXIT_FAILURE;
+        printf("{'error':'Invalid player inputted!'}\n");
+        /* same reason as above */
+        return EXIT_SUCCESS;
     }
 
     int checkWinner = strcmp(argv[3], "-w");
@@ -30,42 +34,25 @@ int main(int argc, char ** argv) {
     
     if (checkWinner == 0) {
         /* perform winner check */
-        char win = isWinner(board, player);
-        printf("stuff: %c\n", win);
-        
-        /* -1 is loss */
-        int winValue = -1;
-        /* it is a win */
-        if(win == player)
-            winValue = 1;
-        /* is is a tie */
-        else if(win == '-')
-            winValue = 0;
+        char win = getWinner(board);
+        /*printf("stuff: %c\n", win);*/
 
-        printf("isWinner: %i\n", winValue);
+        printf("{'winner': '%c'}\n", win);
     } else if (findMove == 0) {
         /* perform next move calculation */
         Move * mv = nextMove(board, player);
         if(mv != NULL) {
             doMove(board, mv->i, mv->j, player);
-            char win = isWinner(board, player);
-
-            /* -1 is loss */
-            int winValue = -1;
-            /* it is a win */
-            if(win == player)
-                winValue = 1;
-            /* is is a tie */
-            else if(win == '-')
-                winValue = 0;
-
-            printf("(%i,%i), isWinner: %i\n", mv->i, mv->j, winValue);
+            char win = getWinner(board);
+            printf("{'move_x': '%i', 'move_y':'%i', 'winner': '%c'}\n", mv->i, mv->j, win);
             free(mv);
-        } else 
-            printf("No good move found!\n");
+        } else {
+            char win = getWinner(board);
+            /* no good move found */
+            printf("{'move_x': '-1', 'move_y':'-1', 'winner': '%c'}\n", win);
+        }
     } else {
-        printf("Invalid flag passed!\n");
-        printInputMsg();
+        printf("{'error':'Invalid flag passed!'}\n");
     }
 
     freeBoard(board);
@@ -177,7 +164,7 @@ int max(char ** board, Move * optimalMove, char player, int depth) {
             //available move
             if(board[i][j] == '-') {
                 doMove(board, i, j, player);
-                char isWin = isWinner(board, player);
+                char isWin = getWinner(board);
                 if(isWin == player) {
                     /* the player won with this move */
                     value = 10 - depth;
@@ -226,7 +213,7 @@ int min(char ** board, Move * optimalMove, char player, int depth) {
             //available move
             if(board[i][j] == '-') {
                 doMove(board, i, j, player);
-                char isWin = isWinner(board, player);
+                char isWin = getWinner(board);
                 if(isWin == player) {
                     /* this move generates a win */
                     value = depth - 10;
@@ -346,7 +333,8 @@ void undoMove(char ** board, int i, int j) {
  * method returns the player mark. If player is looser then returns the
  * opponent mark. If draw returns '-'. If no winner returns ' '
  */
-char isWinner(char ** board, char player) {
+char getWinner(char ** board) {
+    char player = 'o';
     char oppPlayer = getOpponentMark(player);
     int col = 0, row = 0, ldiag = 0, rdiag = 0;
     int col_op = 0, row_op = 0, ldiag_op = 0, rdiag_op = 0;
