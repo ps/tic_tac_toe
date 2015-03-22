@@ -8,7 +8,7 @@ int main(int argc, char ** argv) {
     }
     /* check number of arguments passed */
     if(argc != 4) {
-        printf("{'error':'Invalid number of arguments passed!'}\n");
+        printf("{\"error\":\"Invalid number of arguments passed!\"}\n");
         /* returning success so that python script doesn't crash */
         return EXIT_SUCCESS;
     }
@@ -16,7 +16,7 @@ int main(int argc, char ** argv) {
     /* initialize and check board */
     char ** board = createBoardFromInput(argv[1]);
     if(board == NULL) {
-        printf("{'error':'Invalid board data inputted!'}\n");
+        printf("{\"error\":\"Invalid board data inputted!\"}\n");
         /* same reason as above */
         return EXIT_SUCCESS;
     }
@@ -24,7 +24,7 @@ int main(int argc, char ** argv) {
     /* check player */
     char player = tolower(argv[2][0]);
     if(player != 'o' && player != 'x') {
-        printf("{'error':'Invalid player inputted!'}\n");
+        printf("{\"error\":\"Invalid player inputted!\"}\n");
         /* same reason as above */
         return EXIT_SUCCESS;
     }
@@ -37,22 +37,22 @@ int main(int argc, char ** argv) {
         char win = getWinner(board);
         /*printf("stuff: %c\n", win);*/
 
-        printf("{'winner': '%c'}\n", win);
+        printf("{\"winner\": \"%c\"}\n", win);
     } else if (findMove == 0) {
         /* perform next move calculation */
         Move * mv = nextMove(board, player);
         if(mv != NULL) {
             doMove(board, mv->i, mv->j, player);
             char win = getWinner(board);
-            printf("{'move_x': '%i', 'move_y':'%i', 'winner': '%c'}\n", mv->i, mv->j, win);
+            printf("{\"move_x\": \"%i\", \"move_y\":\"%i\", \"winner\": \"%c\"}\n", mv->i, mv->j, win);
             free(mv);
         } else {
             char win = getWinner(board);
             /* no good move found */
-            printf("{'move_x': '-1', 'move_y':'-1', 'winner': '%c'}\n", win);
+            printf("{\"move_x\": \"-1\", \"move_y\":\"-1\", \"winner\": \"%c\"}\n", win);
         }
     } else {
-        printf("{'error':'Invalid flag passed!'}\n");
+        printf("{\"error\":\"Invalid flag passed!\"}\n");
     }
 
     freeBoard(board);
