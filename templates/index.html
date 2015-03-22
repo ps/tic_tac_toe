@@ -1,5 +1,178 @@
- <form action="/brain" method="post">
-  First name: <input type="text" name="fname"><br>
-  Last name: <input type="text" name="lname"><br>
-  <input type="submit" value="Submit">
-</form> 
+<!DOCTYPE html>
+<html>
+  <head>
+  	<meta charset="utf-8">
+  	<meta name="viewport" content="width=device-width, initial-scale=1">
+  	<title>Tic Tac Toe</title>
+    <meta name="description" content="">
+	  <meta name="author" content="Pawel Szczurko">
+    <link href="{{ url_for('static', filename='normalize.css') }}" rel="stylesheet" type="text/css">
+    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet" type="text/css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+  </head>
+  <body>
+  <style type="text/css">
+  .tt-container {
+  	border: 1px solid #808080;
+  	display: table;
+  	height: 300px;
+  	width: 300px;
+  	margin: 0 auto;
+  }
+  div[class*='row-'] {
+  	display: table-row;
+  }
+  div[class*='cell-'] {
+  	display: table-cell;
+  	border: 1px solid #808080;
+  }
+  .o {
+  	background-image: url("static/o.png");
+  	background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
+  }
+  .x {
+  	background-image: url("static/x.png");
+  	background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
+  }
+  .result {
+  	display: none;
+  }
+  </style>
+
+  <div class="header"> 
+    <a class="special" href="http://wikitranslateitfor.me">Tic Tac Toe!</a>
+  </div>
+  <div class="container">
+    <div class="result"></div>
+  	<br><br>
+  	
+    <div class="tt-container">
+    	<div class="row-0">
+    		<div class="cell-0"></div>
+    		<div class="cell-1"></div>
+    		<div class="cell-2"></div>
+    	</div>
+    	<div class="row-1">
+    		<div class="cell-3"></div>
+    		<div class="cell-4"></div>
+    		<div class="cell-5"></div>
+    	</div>
+    	<div class="row-2">
+    		<div class="cell-6"></div>
+    		<div class="cell-7"></div>
+    		<div class="cell-8"></div>
+    	</div>
+   	</div>
+    
+  </div>
+  <script>
+  	var USER_PLAYER;
+  	var AI;
+  	var CELLS;
+  	var BOARD;
+  	var ALLOW_MOVE;
+  	var RESULT_BOX;
+
+  	initializeData();
+
+  	$('.row-0').delegate('div', 'click', function() {
+  		index = $(this).index();
+    	//alert('index ' + $(this).index() + ' was clicked');
+    	setCell(0, index, USER_PLAYER);
+	});
+	$('.row-1').delegate('div', 'click', function() {
+		index = /*3 +*/ $(this).index();
+    	//alert('index ' + index + ' was clicked');
+    	setCell(1, index, USER_PLAYER);
+	});
+	$('.row-2').delegate('div', 'click', function() {
+		index = /*6 +*/ $(this).index();
+    	//alert('index ' + index + ' was clicked');
+    	setCell(2, index, USER_PLAYER);
+	});
+	function setCell(x, y, player) {
+		if (ALLOW_MOVE && BOARD[x][y] == "-") {
+			CELLS[x][y].addClass(player);
+			BOARD[x][y] = player;
+			//make request
+			console.log(boardToString());
+			if(player == USER_PLAYER) {
+				ALLOW_MOVE = false;
+				requestAIMove();
+			}
+		}
+	}
+	// still need to make call when user last click draw (or just count number of occuppied cells!)
+	function initializeData() {
+		RESULT_BOX = $(".result");
+		USER_PLAYER = "o";
+	  	AI = "x";
+	  	CELLS = [[],[],[]];
+	  	BOARD = [["-","-","-"],["-","-","-"],["-","-","-"]];
+	  	/*player start*/
+	  	ALLOW_MOVE = true;
+	  	/*ai start*/
+	  	ALLOW_MOVE = false;
+	  	requestAIMove();
+
+	  	var c = 0;
+	  	for(var i = 0; i < 3; i++) {
+			for(var j = 0; j < 3; j++) {
+				class_name = ".cell-" + c;
+	  			CELLS[i][j] = $(class_name);
+				c++;
+			}
+		}
+	}
+
+	function boardToString() {
+		str_board = "";
+		for(var i = 0; i < 3; i++) {
+			for(var j = 0; j < 3; j++) {
+				str_board += BOARD[i][j];
+			}
+		}
+		return str_board;
+	}
+	function requestAIMove() {
+		$.ajax({
+			type: "GET",
+			dataType: "json",
+			url: "/get_move",
+			data: {
+					"board": boardToString(),
+					"player": AI
+				  },
+			success: function(data) {
+				console.log("success: " + JSON.stringify(data));
+				makeAIMove(data["move_x"], data["move_y"], data["winner"]);
+			},
+			error: function(xhr, textStatus, errorThrown){
+				console.log("failure " + errorThrown);
+		    }
+		}); 
+	}
+	function makeAIMove(x, y, win) {
+		ALLOW_MOVE = true;
+		setCell(x, y, AI);
+		if(win == "-") {
+			RESULT_BOX.text("It is a draw!");
+			RESULT_BOX.show();
+		} else if (win == AI) {
+			RESULT_BOX.text("YOU LOSE!!");
+			RESULT_BOX.show();
+		}
+		// user NEVER wins so no point for else case
+	}
+  </script>
+  <div class="footer">
+      &#169; {{ year }}  <a class="special" href="http://tictac.pawel.pw">tictac.pawel.pw</a>
+      <iframe style="position: relative;top: 5px;left: 5px;" src="http://ghbtns.com/github-btn.html?user=ps&repo=tic_tac_toe&type=watch" allowtransparency="true" frameborder="0" scrolling="0" width="62" height="20"></iframe>
+  </div>
+
+</body>
+</html>

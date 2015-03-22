@@ -1,5 +1,6 @@
 import logging
 import subprocess
+from datetime import date
 from flask import Flask,render_template,request
 from logging.handlers import RotatingFileHandler
 
@@ -8,7 +9,8 @@ app=Flask(__name__)
 @app.route('/')
 def main_page():
     # will display main game page
-    return render_template('index.html')
+    year = date.today().year
+    return render_template('index.html', year=year)
 
 @app.route('/api')
 def api_docs():
