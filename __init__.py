@@ -39,11 +39,13 @@ def move_request():
     return render_template("data_error.html")
 
 def exec_ai(board_data, player, flag):
-    return subprocess.check_output(["%s/backend_ai/./TTAI" % os.getcwd(), 
-        board_data, player, flag])
+    abspath_cwd = os.path.dirname(os.path.abspath(__file__))
+    script_path = os.path.join(abspath_cwd, 'backend_ai/./TTAI')
+    return subprocess.check_output([script_path, board_data, player, flag])
 
 if __name__ == "__main__":
-    file_handler = RotatingFileHandler('%s/../tictac_error.log' % os.getcwd(), 
+    abspath_cwd = os.path.dirname(os.path.abspath(__file__))
+    file_handler = RotatingFileHandler(os.path.join(abspath_cwd, '../tictac_error.log'), 
         maxBytes=1024 * 1024 * 100, backupCount=20)
     file_handler.setLevel(logging.INFO)
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
