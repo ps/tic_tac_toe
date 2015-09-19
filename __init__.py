@@ -1,4 +1,5 @@
 import logging
+import os
 import subprocess
 from datetime import date
 from flask import Flask,render_template,request
@@ -38,11 +39,11 @@ def move_request():
     return render_template("data_error.html")
 
 def exec_ai(board_data, player, flag):
-    return subprocess.check_output(["backend_ai/./TTAI", 
+    return subprocess.check_output(["%s/backend_ai/./TTAI" % os.getcwd(), 
         board_data, player, flag])
 
 if __name__ == "__main__":
-    file_handler = RotatingFileHandler('../tictac_error.log', 
+    file_handler = RotatingFileHandler('%s/../tictac_error.log' % os.getcwd(), 
         maxBytes=1024 * 1024 * 100, backupCount=20)
     file_handler.setLevel(logging.INFO)
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
